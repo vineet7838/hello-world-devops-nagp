@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: devops-assign-deployment
-  namespace: devops-assign-ns
+  namespace: devops-assign-ns1
   labels:
     app: devops-assign
 spec:
@@ -24,7 +24,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:  
-  namespace: devops-assign-ns
+  namespace: devops-assign-ns1
   name: devops-assign-service
 spec:
   selector:    
