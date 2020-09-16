@@ -93,7 +93,7 @@ pipeline {
         		steps {
         				bat "kubectl create ns devops-assign-ns"
         				bat "helm create devops-chart"
-        				bat "copy devops-deployment.yml devops-chart\templates\chart-deployment.yml"
+        				bat "copy devops-deployment.yml devops-chart\\templates\\chart-deployment.yml"
         				bat "kubectl -n devops-assign-ns delete deployment,services,pod --all"
         				bat "helm install chart-deployment devops-chart"
             	}
