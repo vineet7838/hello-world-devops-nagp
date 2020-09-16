@@ -83,9 +83,19 @@ pipeline {
             	}
         }
         
-         stage('Docker Deployment') {
+        stage('Docker Deployment') {
         		steps {
         				bat "docker run -d --name c_bhaveshkwatra_master -p 6200:8080 dtr.nagarro.com:443/i_bhaveshkwatra_master:${BUILD_NUMBER}"
+            	}
+        }
+        
+        stage('Helm Chart Deployment') {
+        		steps {
+        				bat "kubectl create ns devops-assign-ns"
+        				bat "helm create devops-chart"
+        				bat "cd devops-chart/templates"
+        				bat "copy devops-deployment.yml chart-deployment.yml"
+        				bat "helm install chart-deployment devops-chart"
             	}
         }
             

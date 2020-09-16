@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-assign-deployment
+  namespace: devops-assign-ns
+  labels:
+    app: devops-assign
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: devops-assign
+  template:
+    metadata:
+      labels:
+        app: devops-assign
+    spec:
+      containers:
+      - name: devops-assign-container
+        image: dtr.nagarro.com:443/i_bhaveshkwatra_master:latest
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:  
+  namespace: devops-assign-ns
+  name: devops-assign-service
+spec:
+  selector:    
+    app: devops-assign
+  type: NodePort
+  ports:  
+  - name: devops-assign-port
+    port: 8080
+    targetPort: 8080
+    nodePort: 30157
+    protocol: TCP
