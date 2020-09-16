@@ -91,10 +91,12 @@ pipeline {
         
         stage('Helm Chart Deployment') {
         		steps {
-        				bat "kubectl create ns devops-assign-ns1"
+        				bat "kubectl delete namespace devops-assign-ns"
+        				bat "kubectl create ns devops-assign-ns"
+        				bat "helm uninstall devops-chart"
         				bat "helm create devops-chart"
-        				bat "cd devops-chart/templates"
-        				bat "copy devops-deployment.yml chart-deployment.yml"
+        				bat "copy devops-deployment.yml ./devops-chart/templates/chart-deployment.yml"
+        				bat "kubectl -n devops-assign-ns delete deployment,services,pod --all"
         				bat "helm install chart-deployment devops-chart"
             	}
         }
