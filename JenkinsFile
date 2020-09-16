@@ -91,9 +91,7 @@ pipeline {
         
         stage('Helm Chart Deployment') {
         		steps {
-        				bat "kubectl delete namespace devops-assign-ns"
         				bat "kubectl create ns devops-assign-ns"
-        				bat "helm uninstall devops-chart"
         				bat "helm create devops-chart"
         				bat "copy devops-deployment.yml ./devops-chart/templates/chart-deployment.yml"
         				bat "kubectl -n devops-assign-ns delete deployment,services,pod --all"
