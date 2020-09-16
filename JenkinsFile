@@ -1,0 +1,94 @@
+pipeline {
+    agent any
+
+    tools {
+        // Install the Maven version configured as "M3" and add it to the path.
+        maven "MAVEN_HOME"
+    }
+    
+    options {
+        timestamps()
+        skipDefaultCheckout()        
+        buildDiscarder((logRotator(daysToKeepStr:'10', numToKeepStr:'10'))) 
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo "Checkout from Git Master Branch"
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo "Compile the code"
+                bat "mvn clean compile install"
+            }
+        }
+        
+        stage('Unit Testing') {
+        		steps {
+                echo "Run Test Cases"
+                bat "mvn test"
+            }
+        }
+        
+        
+        stage('Sonar Analysis') {
+        		steps {
+                		withSonarQubeEnv("Test_Sonar") {
+                			echo "Sonar Analysis"
+                			bat "mvn sonar:sonar"
+                		}
+            	}
+        }    
+        
+        stage('Upload to Artifactory') {
+        		steps {
+                		rtMavenDeployer (
+									    id: 'deployer-id',
+									    serverId: '123456789@artifactory',
+									    releaseRepo: 'Jenkins-integration',
+									    snapshotRepo: 'Jenkins-snapshot'
+									    )
+						rtMavenRun (
+								    pom: 'pom.xml',
+								    goals: 'clean install',
+								    deployerId: 'deployer-id'
+						)		
+						
+						rtPublishBuildInfo (
+    							serverId: "123456789@artifactory"
+						)		    
+									    
+            	}
+        }
+        
+        stage('Docker Image') {
+        		steps {
+						bat "docker build -t dtr.nagarro.com:443/i_bhaveshkwatra_master:${BUILD_NUMBER} --no-cache -f Dockerfile ."			    
+            	}
+        }
+        
+        stage('Push to DTR') {
+        		steps {
+        				bat "docker push dtr.nagarro.com:443/i_bhaveshkwatra_master:${BUILD_NUMBER}"
+            	}
+        }
+        
+        stage('Stop Running Container') {
+        		steps {
+        				bat "(docker stop c_bhaveshkwatra_master || (exit 0)) && (docker rm c_bhaveshkwatra_master || (exit 0))"
+            	}
+        }
+        
+         stage('Docker Deployment') {
+        		steps {
+        				bat "docker run -d --name c_bhaveshkwatra_master -p 6200:8080 dtr.nagarro.com:443/i_bhaveshkwatra_master:${BUILD_NUMBER}"
+            	}
+        }
+            
+     }
+        
+}
