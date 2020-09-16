@@ -7,7 +7,7 @@ pipeline {
     agent any
 
     tools {
-        // Install the Maven version configured as "M3" and add it to the path.
+        // Install the Maven version configured as "Maven3" and add it to the path.
         maven "Maven3"
     }
     
@@ -28,14 +28,14 @@ pipeline {
         stage('Build') {
             steps {
                 echo "Compile the code"
-                bat "${Maven3} clean compile install"
+                bat "mvn clean compile install"
             }
         }
         
         stage('Unit Testing') {
                 steps {
                 echo "Run Test Cases"
-                bat "${Maven3} test"
+                bat "mvn test"
             }
         }
         
@@ -44,7 +44,7 @@ pipeline {
                 steps {
                         withSonarQubeEnv("Test_Sonar") {
                             echo "Sonar Analysis"
-                            bat "${Maven3} sonar:sonar"
+                            bat "mvn sonar:sonar"
                         }
                 }
         }    
