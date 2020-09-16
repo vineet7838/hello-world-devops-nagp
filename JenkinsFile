@@ -1,9 +1,14 @@
 pipeline {
+
+    environment {
+        ARTIFACTORY_SERVER_ID = '123456789@artifactory'
+    }
+
     agent any
 
     tools {
         // Install the Maven version configured as "M3" and add it to the path.
-        maven "MAVEN_HOME"
+        maven "Maven3"
     }
     
     options {
@@ -23,80 +28,80 @@ pipeline {
         stage('Build') {
             steps {
                 echo "Compile the code"
-                bat "mvn clean compile install"
+                bat "${Maven3} clean compile install"
             }
         }
         
         stage('Unit Testing') {
-        		steps {
+                steps {
                 echo "Run Test Cases"
-                bat "mvn test"
+                bat "${Maven3} test"
             }
         }
         
         
         stage('Sonar Analysis') {
-        		steps {
-                		withSonarQubeEnv("Test_Sonar") {
-                			echo "Sonar Analysis"
-                			bat "mvn sonar:sonar"
-                		}
-            	}
+                steps {
+                        withSonarQubeEnv("Test_Sonar") {
+                            echo "Sonar Analysis"
+                            bat "${Maven3} sonar:sonar"
+                        }
+                }
         }    
         
         stage('Upload to Artifactory') {
-        		steps {
-                		rtMavenDeployer (
-									    id: 'deployer-id',
-									    serverId: '123456789@artifactory',
-									    releaseRepo: 'Jenkins-integration',
-									    snapshotRepo: 'Jenkins-snapshot'
-									    )
-						rtMavenRun (
-								    pom: 'pom.xml',
-								    goals: 'clean install',
-								    deployerId: 'deployer-id'
-						)		
-						
-						rtPublishBuildInfo (
-    							serverId: "123456789@artifactory"
-						)		    
-									    
-            	}
+                steps {
+                        rtMavenDeployer (
+                                        id: 'deployer-id',
+                                        serverId: ARTIFACTORY_SERVER_ID,
+                                        releaseRepo: 'CI-Automation-JAVA',
+                                        snapshotRepo: 'CI-Automation-JAVA'
+                                        )
+                        rtMavenRun (
+                                    pom: 'pom.xml',
+                                    goals: 'clean install',
+                                    deployerId: 'deployer-id'
+                        )       
+                        
+                        rtPublishBuildInfo (
+                                serverId: ARTIFACTORY_SERVER_ID
+                        )           
+                                        
+                }
         }
         
         stage('Docker Image') {
-        		steps {
-						bat "docker build -t dtr.nagarro.com:443/i_bhaveshkwatra_master:latest --no-cache -f Dockerfile ."			    
-            	}
+                steps {
+                        bat "docker build -t dtr.nagarro.com:443/i_bhaveshkwatra_master:latest --no-cache -f Dockerfile ."              
+                }
         }
         
         stage('Push to DTR') {
-        		steps {
-        				bat "docker push dtr.nagarro.com:443/i_bhaveshkwatra_master:latest"
-            	}
+                steps {
+                        bat "docker push dtr.nagarro.com:443/i_bhaveshkwatra_master:latest"
+                }
         }
         
         stage('Stop Running Container') {
-        		steps {
-        				bat "(docker stop c_bhaveshkwatra_master || (exit 0)) && (docker rm c_bhaveshkwatra_master || (exit 0))"
-            	}
+                steps {
+                        bat "(docker stop c_bhaveshkwatra_master || (exit 0)) && (docker rm c_bhaveshkwatra_master || (exit 0))"
+                }
         }
         
         stage('Docker Deployment') {
-        		steps {
-        				bat "docker run -d --name c_bhaveshkwatra_master -p 6200:8080 dtr.nagarro.com:443/i_bhaveshkwatra_master:latest"
-            	}
+                steps {
+                        bat "docker run -d --name c_bhaveshkwatra_master -p 6200:8080 dtr.nagarro.com:443/i_bhaveshkwatra_master:latest"
+                }
         }
         
         stage('Helm Chart Deployment') {
-        		steps {
-        				bat "kubectl create ns devops-assign-ns"
-        				bat "helm create devops-chart"
-        				bat "copy devops-deployment.yml devops-chart\\templates\\chart-deployment.yml"
-        				bat "kubectl -n devops-assign-ns delete deployment,services,pod --all"
-        				bat "helm install chart-deployment devops-chart"
-            	}
+                steps {
+                        bat "kubectl create ns devops-assign-ns"
+                        bat "helm create devops-chart"
+                        bat "copy devops-deployment.yml devops-chart\\templates\\chart-deployment.yml"
+                        bat "kubectl -n devops-assign-ns delete deployment,services,pod --all"
+                        bat "helm install chart-deployment devops-chart || exit 0"
+                }
         }
             
      }
