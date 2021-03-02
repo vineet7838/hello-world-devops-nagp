@@ -1,109 +1,21 @@
 pipeline {
 
-    environment {
-        ARTIFACTORY_SERVER_ID = '123456789@artifactory'
-    }
-
-    agent any
-
-    tools {
-        // Install the Maven version configured as "Maven3" and add it to the path.
-        maven "Maven3"
-    }
-    
-    options {
-        timestamps()
-        skipDefaultCheckout()        
-        buildDiscarder((logRotator(daysToKeepStr:'10', numToKeepStr:'10'))) 
-    }
-
-    stages {
-        stage('Checkout') {
-            steps {
-                echo "Checkout from Git Master Branch"
-                checkout scm
-            }
+ agent any
+ 
+   tools {
+     maven "Maven3"
+   }
+   
+   options {
+     timestamps()
+     skipDefaultCheckout()
+   }
+   
+   stages {
+      stage('checkout') {
+        step {
+          echo "checkout"
         }
-
-        stage('Build') {
-            steps {
-                echo "Compile the code"
-                bat "mvn clean compile install"
-            }
-        }
-        
-        stage('Unit Testing') {
-                steps {
-                echo "Run Test Cases"
-                bat "mvn test"
-            }
-        }
-        
-        
-        stage('Sonar Analysis') {
-                steps {
-                        withSonarQubeEnv("Test_Sonar") {
-                            echo "Sonar Analysis"
-                            bat "mvn sonar:sonar"
-                        }
-                }
-        }    
-        
-        stage('Upload to Artifactory') {
-                steps {
-                        rtMavenDeployer (
-                                        id: 'deployer-id',
-                                        serverId: ARTIFACTORY_SERVER_ID,
-                                        releaseRepo: 'CI-Automation-JAVA',
-                                        snapshotRepo: 'CI-Automation-JAVA'
-                                        )
-                        rtMavenRun (
-                                    pom: 'pom.xml',
-                                    goals: 'clean install',
-                                    deployerId: 'deployer-id'
-                        )       
-                        
-                        rtPublishBuildInfo (
-                                serverId: ARTIFACTORY_SERVER_ID
-                        )           
-                                        
-                }
-        }
-        
-        stage('Docker Image') {
-                steps {
-                        bat "docker build -t dtr.nagarro.com:443/i_bhaveshkwatra_master:latest --no-cache -f Dockerfile ."              
-                }
-        }
-        
-        stage('Push to DTR') {
-                steps {
-                        bat "docker push dtr.nagarro.com:443/i_bhaveshkwatra_master:latest"
-                }
-        }
-        
-        stage('Stop Running Container') {
-                steps {
-                        bat "(docker stop c_bhaveshkwatra_master || (exit 0)) && (docker rm c_bhaveshkwatra_master || (exit 0))"
-                }
-        }
-        
-        stage('Docker Deployment') {
-                steps {
-                        bat "docker run -d --name c_bhaveshkwatra_master -p 6200:8080 dtr.nagarro.com:443/i_bhaveshkwatra_master:latest"
-                }
-        }
-        
-        stage('Helm Chart Deployment') {
-                steps {
-                        bat "kubectl create ns devops-assign-ns"
-                        bat "helm create devops-chart"
-                        bat "copy devops-deployment.yml devops-chart\\templates\\chart-deployment.yml"
-                        bat "kubectl -n devops-assign-ns delete deployment,services,pod --all"
-                        bat "helm install chart-deployment devops-chart || exit 0"
-                }
-        }
-            
-     }
-        
+      }
+   }
 }
