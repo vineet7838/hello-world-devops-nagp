@@ -2,6 +2,13 @@ pipeline {
 
  agent any
  
+ parameters {
+  choice( 
+         name: 'Environment',
+         choices: ['Develop', Feature],
+         description: 'Environment choices'
+  )
+ }
    tools {
      maven "Maven3"
    }
@@ -15,6 +22,7 @@ pipeline {
       stage('checkout') {
         steps {
           echo "checkout"
+          git checkout []
         }
       }
    }
