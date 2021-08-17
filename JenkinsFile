@@ -49,26 +49,6 @@ pipeline {
                 }
         }    
 
-        stage('Upload to Artifactory') {
-                steps {
-                        rtMavenDeployer (
-                                        id: 'deployer-id',
-                                        serverId: ARTIFACTORY_SERVER_ID,
-                                        releaseRepo: 'CI-Automation-JAVA',
-                                        snapshotRepo: 'CI-Automation-JAVA'
-                                        )
-                        rtMavenRun (
-                                    pom: 'pom.xml',
-                                    goals: 'clean install',
-                                    deployerId: 'deployer-id'
-                        )       
-
-                        rtPublishBuildInfo (
-                                serverId: ARTIFACTORY_SERVER_ID
-                        )           
-
-                }
-        }
 
         stage('Docker Image') {
                 steps {
